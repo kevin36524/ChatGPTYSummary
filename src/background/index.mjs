@@ -54,7 +54,7 @@ async function generateAnswers(port, question, conversationId, parentMessageId) 
         },
       },
     ],
-    model: 'text-davinci-002-render',
+    model: 'text-davinci-002-render-sha',
     parent_message_id: parentMessageId ?? uuidv4(),
   }
 

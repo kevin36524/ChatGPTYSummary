@@ -1,11 +1,11 @@
 import 'github-markdown-css'
 import { render } from 'preact'
 import { unmountComponentAtNode } from 'preact/compat'
-import { getUserConfig, keys } from '../config'
+//import { getUserConfig, keys } from '../config'
 import ChatGPTCard from './ChatGPTCard'
-import { config } from './email-site-configs.mjs'
+// import { config } from './email-site-configs.mjs'
 import './styles.scss'
-import { getPossibleElementByQuerySelector } from './utils.mjs'
+// import { getPossibleElementByQuerySelector } from './utils.mjs'
 
 const renderOrUpdateCard = (question, container) => {
   render(
@@ -22,26 +22,6 @@ const renderOrUpdateCard = (question, container) => {
   )
 }
 
-const siteRegex = new RegExp(Object.keys(config).join('|'))
-const siteName = location.hostname.match(siteRegex)[0]
-const siteConfig = config[siteName]
-
-function run() {
-  const searchInput = getPossibleElementByQuerySelector(siteConfig.inputQuery)
-
-  if (searchInput) {
-    searchInput.addEventListener('keydown', function (event) {
-      // Check if the key that was pressed was the enter key
-      if (event.key === 'Enter') {
-        // The enter key was pressed
-        mountChatGPT(searchInput.value)
-      }
-    })
-  }
-}
-
-run()
-
 async function mountChatGPT(question) {
   let container = document.createElement('div')
   container.className = 'chat-gpt-container'
@@ -53,53 +33,54 @@ async function mountChatGPT(question) {
   }
 
   container.classList.add('sidebar-free')
-  const appendContainer = document.querySelector('div[data-test-id="content-below-tabs"]')
+  const appendContainer = document.querySelector('aside')
+  appendContainer.innerHTML = ''
   if (appendContainer) {
-    appendContainer.appendChild(container)
+    appendContainer.prepend(container)
   }
 
   renderOrUpdateCard(question, container)
 }
 
-async function addMessageReadChatGPTContainer() {
-  let question = await getUserConfig(keys.MESSAGE_PREPEND_QUERY)
+async function addMessageReadChatGPTContainer(evt) {
+  console.log('KEVINDEBUG I am in addMessageReadChatGPTContainer ')
 
-  question += document.querySelector('div[data-test-id="message-view-body"]').innerText
+  // let question = await getUserConfig(keys.MESSAGE_PREPEND_QUERY)
+
+  const contentWrapperNode = evt.target.closest('article.caas-container')
+  const contentNode = contentWrapperNode.querySelector('.caas-content-wrapper')
+
+  const question = `Provide me a summary for ${contentNode.innerText}`
   mountChatGPT(question)
 }
 
-function addButtonOnMessageReadToolbar() {
-  const toolbarContainer = document.querySelector('div[data-test-id="message-toolbar"] ul')
-  const messageReadView = document.querySelector("div[data-test-id='message-group-view']")
-  if (!messageReadView) {
-    return
+function addButtonOnNewsTab() {
+  console.log('KEVINDEBUG I am in addButtonOnNewsTab')
+  const articleNodes = document.querySelectorAll('article.caas-container')
+  for (let i = 0; i < articleNodes.length; i++) {
+    const articleNode = articleNodes[i]
+    const toolbarNode = articleNode.querySelector('.caas-share-buttons')
+    if (toolbarNode.querySelector('.chatgpt-button') == null) {
+      const button = document.createElement('button')
+      button.className = 'chatgpt-button'
+      button.innerText = 'ChatGPTSummary'
+      button.onclick = addMessageReadChatGPTContainer
+      toolbarNode.prepend(button)
+    }
   }
-  const button = document.createElement('button')
-  button.innerText = 'ChatGPTfy'
-  button.onclick = addMessageReadChatGPTContainer
-  toolbarContainer.appendChild(button)
 }
 
-function waitForMessageReadOrCompose() {
-  const targetNode = document.querySelector("div[data-test-id='mail-app-component'] div")
-  const observer = new MutationObserver(function (records) {
-    for (const record of records) {
-      if (record.type === 'childList') {
-        for (const node of record.addedNodes) {
-          if (node.getAttribute('data-test-id') === 'message-group-view') {
-            addButtonOnMessageReadToolbar()
-            return
-          }
-          if (node.getAttribute('data-test-id') === 'compose-styler') {
-            run()
-            return
-          }
-        }
-      }
+function waitForNewsTab() {
+  console.log('KEVINDEBUG I am in waitForNewsTab')
+  const targetNode = document.body
+  const observer = new MutationObserver(() => {
+    console.log('KEVINDEBUG I am in MutationObserver')
+    const nodeList = document.querySelectorAll('article.caas-container')
+    if (nodeList.length > 0) {
+      addButtonOnNewsTab()
     }
   })
   observer.observe(targetNode, { childList: true })
 }
 
-addButtonOnMessageReadToolbar()
-waitForMessageReadOrCompose()
+waitForNewsTab()

@@ -1,5 +1,5 @@
 {
-  "name": "ChatGPT for Yahoo Mail",
+  "name": "ChatGPT for Yahoo Finance",
   "description": "Create emails and extract mail contents using ChatGPT",
   "version": "1.0.0",
   "manifest_version": 3,
@@ -20,7 +20,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.mail.yahoo.com/*"
+        "https://*.finance.yahoo.com/*",
+        "https://*.news.yahoo.com/*",
+        "https://*.sports.yahoo.com/*"
       ],
       "js": ["content-script.js"],
       "css": ["content-script.css"]
